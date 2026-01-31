@@ -69,7 +69,7 @@ export default function NovelPage({ params }: { params: Promise<{ id: string }> 
     : novel.content.slice(0, 100) + '... (この先は購入すると読めます)';
 
   return (
-    <div className="min-h-screen bg-[#111] text-gray-200 font-sans leading-loose pb-24">
+      <div className="min-h-[100dvh] bg-[#111] text-gray-200 font-sans leading-loose pb-40">
       {/* ヘッダー */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-b from-black/80 to-transparent flex items-center px-4 z-50">
         <Link href="/" className="text-white hover:text-gray-300 flex items-center gap-2 font-bold drop-shadow-md">

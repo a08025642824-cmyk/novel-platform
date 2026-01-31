@@ -123,3 +123,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* アプリ全体のスクロール調整 */
+body {
+  /* 1. スマホのアドレスバー対策（画面の高さを正確に取る） */
+  min-height: 100dvh; 
+
+  /* 2. 下に強制的に余白を作る（これで隠れなくなります） */
+  padding-bottom: 150px !important; 
+}

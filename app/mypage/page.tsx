@@ -75,7 +75,7 @@ export default function MyPage() {
   if (loading) return <div className="min-h-screen bg-black text-white p-10 text-center">読み込み中...</div>;
 
   return (
-    <div className="min-h-screen bg-black text-white pb-24">
+      <div className="min-h-[100dvh] bg-black text-white pb-40">
       {/* ヘッダー画像エリア */}
       <div className="h-40 bg-gradient-to-r from-blue-900 to-purple-900 relative">
         {/* ★ここをログアウトボタンに変更 */}
