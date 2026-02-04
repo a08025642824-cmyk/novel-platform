@@ -124,11 +124,15 @@
   }
 }
 
-/* アプリ全体のスクロール調整 */
 body {
-  /* 1. スマホのアドレスバー対策（画面の高さを正確に取る） */
-  min-height: 100dvh; 
+  /* スマホの高さ対策 */
+  height: 100dvh;
+  
+  /* 余白を「0」にするのではなく、「スマホごとの安全地帯」に合わせる */
+  /* iPhone X以降なら約34px、古いスマホなら0px に自動調整されます */
+  padding-bottom: env(safe-area-inset-bottom); 
 
-  /* 2. 下に強制的に余白を作る（これで隠れなくなります） */
-  padding-bottom: 150px !important; 
+  overflow: hidden;
+  margin: 0;
+  background-color: black;
 }

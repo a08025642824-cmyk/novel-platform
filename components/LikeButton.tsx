@@ -2,95 +2,118 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Heart } from 'lucide-react'; // ハートのアイコン
+import { Heart } from 'lucide-react';
 
-export default function LikeButton({ novelId }: { novelId: string }) {
-  const [liked, setLiked] = useState(false); // 自分がいいねしてるか？
-  const [count, setCount] = useState(0);     // 全体のいいね数
+// ★ propsに isVertical を追加
+export default function LikeButton({ novelId, isVertical = false }: { novelId: string, isVertical?: boolean }) {
+  const [liked, setLiked] = useState(false);
+  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // 初回ロード時に「今のいいね数」と「自分がいいねしてるか」を確認
   useEffect(() => {
-    const checkLikeStatus = async () => {
+    const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 1. 全体のいいね数を数える
-      const { count } = await supabase
+      const { count: totalCount } = await supabase
         .from('likes')
-        .select('*', { count: 'exact', head: true }) // head:true はデータの中身を取らず数だけ数える軽量モード
+        .select('*', { count: 'exact', head: true })
         .eq('novel_id', novelId);
       
-      setCount(count || 0);
+      setCount(totalCount || 0);
 
-      // 2. 自分がログインしていて、既にいいねしてるか確認
       if (user) {
         const { data } = await supabase
           .from('likes')
-          .select('*')
+          .select('id')
           .eq('novel_id', novelId)
           .eq('user_id', user.id)
-          .single();
-        
+          .maybeSingle();
+
         if (data) setLiked(true);
       }
     };
 
-    checkLikeStatus();
+    fetchData();
   }, [novelId]);
 
-  // ボタンが押されたときの処理
-  const toggleLike = async () => {
+  const handleToggleLike = async () => {
     if (loading) return;
     setLoading(true);
 
     const { data: { user } } = await supabase.auth.getUser();
-    
     if (!user) {
-      alert('いいねするにはログインしてください');
+      alert('いいねするにはログインが必要です');
       setLoading(false);
       return;
     }
 
-    if (liked) {
-      // 既にいいねしてるなら → 取り消す（削除）
-      await supabase
-        .from('likes')
-        .delete()
-        .eq('novel_id', novelId)
-        .eq('user_id', user.id);
-      
-      setLiked(false);
-      setCount((prev) => prev - 1); // 表示を1減らす
-    } else {
-      // まだしてないなら → いいねする（追加）
-      await supabase
-        .from('likes')
-        .insert([{ novel_id: novelId, user_id: user.id }]);
-      
-      setLiked(true);
-      setCount((prev) => prev + 1); // 表示を1増やす
+    try {
+      if (liked) {
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('novel_id', novelId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+        setLiked(false);
+        setCount((prev) => Math.max(0, prev - 1));
+      } else {
+        const { error } = await supabase
+          .from('likes')
+          .insert([{ novel_id: novelId, user_id: user.id }]);
+        if (error) throw error;
+        setLiked(true);
+        setCount((prev) => prev + 1);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
+  // ★ デザインの切り替え
+  if (isVertical) {
+    // 【縦長モード】トップページ用（アイコンの下に数字）
+    return (
+      <button 
+        onClick={handleToggleLike} 
+        disabled={loading}
+        className="flex flex-col items-center group"
+      >
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition mb-1 ${
+          liked ? 'bg-red-500/20 text-red-500' : 'bg-black/40 backdrop-blur-sm text-white'
+        }`}>
+          <Heart 
+            size={24} 
+            fill={liked ? "currentColor" : "none"} 
+            className={`transition-transform duration-300 ${liked ? 'scale-110' : 'group-hover:scale-110'}`}
+          />
+        </div>
+        <span className="text-xs font-bold drop-shadow-md text-white">
+          {count}
+        </span>
+      </button>
+    );
+  }
+
+  // 【横長モード】詳細ページ用（アイコンの横に数字）
   return (
     <button
-      onClick={toggleLike}
+      onClick={handleToggleLike}
       disabled={loading}
-      className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold shadow-lg transition transform active:scale-95 ${
+      className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
         liked 
-          ? 'bg-pink-600 text-white shadow-pink-500/30' // いいね済み：ピンク
-          : 'bg-white text-black hover:bg-gray-100'     // 未いいね：白
+          ? 'bg-red-500/20 text-red-500 border border-red-500/50' 
+          : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-600'
       }`}
     >
       <Heart 
         size={20} 
-        fill={liked ? "currentColor" : "none"} // いいね済みなら塗りつぶす
-        className={liked ? "animate-pulse" : ""}
+        fill={liked ? "currentColor" : "none"} 
+        className={`transition-transform ${liked ? 'scale-110' : ''}`}
       />
-      <span>{liked ? 'Thanks!' : 'いいね'}</span>
-      <span className="bg-black/10 px-2 py-0.5 rounded-full text-xs ml-1">
+      <span className="font-bold min-w-[1ch] text-center">
         {count}
       </span>
     </button>
