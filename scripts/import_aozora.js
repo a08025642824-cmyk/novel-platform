@@ -6,7 +6,7 @@ const iconv = require('iconv-lite');
 // ★設定
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const AUTHOR_ID = 'ここに公式アカウントのUUIDを貼り付ける'; // ←忘れず設定！
+const AUTHOR_ID = 'd86e3ce1-a85e-43b4-9b73-40ab8e6ffc65'; // ←忘れず設定！
 
 // ★ボットが読む「名作リスト」
 // 毎日ここからランダムに1つ選ばれます。URLを増やせば無限に投稿できます。
