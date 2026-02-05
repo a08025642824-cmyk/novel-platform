@@ -30,20 +30,36 @@ const STOCK_LIST = [
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// テキスト整形関数（横書き対応版）
+// テキスト整形関数（改良版：複雑なHTML構造に対応）
 async function fetchAndCleanText(url) {
   try {
     const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
     const html = iconv.decode(response.data, 'Shift_JIS');
 
-    let mainText = html.match(/<div class="main_text">([\s\S]*?)<\/div>/)?.[1];
-    if (!mainText) mainText = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] || html;
+    // ★修正点: 正規表現をやめて、「本文開始」から「後付け」の前までを確実に切り抜く方式に変更
+    const startTag = '<div class="main_text">';
+    const endTag = '<div class="bibliographical_information">';
+    
+    let mainText = '';
+    const startIndex = html.indexOf(startTag);
+    const endIndex = html.indexOf(endTag);
 
+    if (startIndex !== -1 && endIndex !== -1) {
+      // main_textのタグの後ろから、後付けの前までを取得
+      mainText = html.substring(startIndex + startTag.length, endIndex);
+    } else {
+      // 見つからない場合のフォールバック
+      mainText = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] || html;
+    }
+
+    // 不要なタグの削除（ここは以前と同じ）
     mainText = mainText.replace(/<br\s*\/?>/gi, '\n');
     mainText = mainText.replace(/<ruby>(?:<rb>)?(.*?)(?:<\/rb>)?.*?<rt>(.*?)<\/rt>.*?<\/ruby>/g, '$1($2)');
     mainText = mainText.replace(/［＃.*?］/g, '');
     mainText = mainText.replace(/<[^>]+>/g, '');
     mainText = mainText.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    
+    // 空行の調整
     mainText = mainText.replace(/\n{3,}/g, '\n\n');
 
     return mainText.trim();
